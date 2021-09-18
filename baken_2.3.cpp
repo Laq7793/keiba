@@ -2,11 +2,28 @@
 // ver.2.0 : BitFullSearchによる baren を含めた最適化をしたと思ってた
 // ver.2.1 : sanrenの入れ替えのあれ, BitFullSearchの修正，0対策
 // ver.2.2 : 玲さんの入力に対応しようとした
+// ver.2.3 : 霊さんの入力に対応した．
 
 #include<iostream>
 #include<vector>
 #include<string>
 #include<algorithm>
+#include<sstream> 
+
+// delimで分割して左から順にvectorにぶち込む
+std::vector<int> split(const std::string &str, char delim) {
+  std::vector<int> elems;   // :=ぶち込まれるやつ
+  std::stringstream ss(str);
+  std::string s;  // := delimで分割されたやつ
+  int num;  // := のint
+  while(std::getline(ss, s, delim)){    // delimで分割するじゃん？
+    if(!s.empty()){   
+      num = std::stoi(s);   // 数字に変換
+      elems.push_back(num);
+    }
+  }
+  return elems;
+}
 
 int main(void){
   int i, j, k;
@@ -16,71 +33,96 @@ int main(void){
   double tan[n+1], batan[n+1][n+1], santan[n+1][n+1][n+1];		// sntn[i][j][k] := i>j>k のオッズ
   double baren[n+1][n+1], sanren[n+1][n+1][n+1];   // brn[i][j] := i-j のオッズ
   std::string unchi, unpip;       // := unchi, unpip
+  double v_ini = 999999.9;   //   初期化の値
+
+
+  // 初期化
+  for(i=0;i<n+1;i++){
+    tan[i] = v_ini;
+    fuku[i] = v_ini;
+    for(j=0;j<n+1;j++){
+      batan[i][j] = v_ini;
+      baren[i][j] = v_ini;
+      wide[i][j] = v_ini;
+      for(k=0;k<n+1;k++){
+        santan[i][j][k] = v_ini;
+        sanren[i][j][k] = v_ini;
+      }
+    }
+  }
+
 
   // input
+  // tan
+  int num;
   std::cin >> unchi;
-  for(i=1;i<n+1;i++){   // tan
+  for(i=1;i<n+1;i++){   // tan, fuku
     std::cin >> unchi >> tan[i] >> fuku[i];
-    if(tan[i] == 0.0)   tan[i] = 1.0;   // 0 は怖い
-    if(fuku[i] == 0.0)  fuku[i] = 1.0;
   }
-  std::cin >> unchi >> unpip;
-  for(i=1;i<n+1;i++){   // batan
-    for(j=1;j<n+1;j++){
-      if(i == j)  continue;   // i == j は定義されない
-      std::cin >> unchi >> batan[i][j];
-      if(batan[i][j] == 0.0)  batan[i][j] = 1.0;
-    }
+
+  // batan
+  std::cin >> unchi >> num;
+  for(i=1;i<num+1;i++){
+    std::string str;    // := 「i>j」とか
+    double TANAKA;      // := odds
+    std::cin >> str >> TANAKA;
+    std::vector<int> uma = split(str, '>');     // >で分割してvectorに入れる
+    batan[uma[0]][uma[1]] = TANAKA;
   }
-  std::cin >> unchi >> unpip;
-  for(i=1;i<n+1;i++){   // santan
-    for(j=1;j<n+1;j++){
-      if(i == j)  continue;
-      for(k=1;k<n+1;k++){
-        if(j == k || k == i)  continue;		// (ry
-        std::cin >> unchi >> santan[i][j][k];
-        if(santan[i][j][k] == 0.0)  santan[i][j][k] = 1.0;
-      }
-    }
-　}
-  std::cin >> unchi >> unpip;
-  for(i=1;i<n+1;i++){   // baren
-    for(j=i+1;j<n+1;j++){
-      std::cin >> unchi >> baren[i][j];
-      if(baren[i][j] == 0.0)  baren[i][j] = 1.0;
-      baren[j][i] = baren[i][j];  // i-j == j-i
-    }
+
+  // santan
+  std::cin >> unchi >> num;
+  for(i=1;i<num+1;i++){
+    std::string str;    // := 「i>j」とか
+    double TANAKA;      // := odds
+    std::cin >> str >> TANAKA;
+    std::vector<int> uma = split(str, '>');
+    santan[uma[0]][uma[1]][uma[2]] = TANAKA;
   }
-  std::cin >> unchi >> unpip;;
-  for(i=1;i<n+1;i++){   // sanren
-    for(j=i+1;j<n+1;j++){
-      for(k=j+1;k<n+1;k++){
-        std::cin >> unchi >> sanren[i][j][k];
-        if(sanren[i][j][k] == 0.0)  sanren[i][j][k] = 1.0;
-        std::vector<int> v = {i, j, k};
-        do{
-          sanren[v[0]][v[1]][v[2]] = sanren[i][j][k];
-        }while(std::next_permutation(v.begin(), v.end()));
-      }
-    }
-	}
-  std::cin >> unchi >> unpip;
-  for(i=1;i<n+1;i++){   // wide
-    for(j=i+1;j<n+1;j++){
-      std::cin >> unchi >> wide[i][j];
-      if(wide[i][j] == 0.0)  wide[i][j] = 1.0;
-      wide[j][i] = wide[i][j];  // i-j == j-i
-    }
+
+  // baren
+  std::cin >> unchi >> num;
+  for(i=1;i<num+1;i++){
+    std::string str;    // := 「i>j」とか
+    double TANAKA;      // := odds
+    std::cin >> str >> TANAKA;
+    std::vector<int> uma = split(str, '-');
+    baren[uma[0]][uma[1]] = TANAKA;
+    baren[uma[1]][uma[0]] = TANAKA;
+  }
+
+  // batan
+  std::cin >> unchi >> num;
+  for(i=1;i<num+1;i++){
+    std::string str;    // := 「i>j」とか
+    double TANAKA;      // := odds
+    std::cin >> str >> TANAKA;
+    std::vector<int> uma = split(str, '-');
+    sort(uma.begin(), uma.end());   // なんか怖いじゃん？
+    do{
+      sanren[uma[0]][uma[1]][uma[2]] = TANAKA;
+    }while(std::next_permutation(uma.begin(), uma.end()));
+  }
+
+  // wide
+  std::cin >> unchi >> num;
+  for(i=1;i<num+1;i++){
+    std::string str;    // := 「i>j」とか
+    double TANAKA;      // := odds
+    std::cin >> str >> TANAKA;
+    std::vector<int> uma = split(str, '-');
+    wide[uma[0]][uma[1]] = TANAKA;
+    wide[uma[1]][uma[0]] = TANAKA;
   }
 
 
-  // 入力確認
-  //std::cout << tan[n] << std::endl;
-  //std::cout << batan[n][n-1] << std::endl;
-  //std::cout << baren[n][n-1] << std::endl;
-  //std::cout << santan[n][n-1][n-2] << std::endl;
-  //std::cout << sanren[n][n-1][n-2] << std::endl;
-
+  // 入力確認 
+/*std::cout << tan[n] << std::endl;
+  std::cout << batan[n][n-1] << std::endl;
+  std::cout << baren[n][n-1] << std::endl;
+  std::cout << santan[n][n-1][n-2] << std::endl;
+  std::cout << sanren[n][n-1][n-2] << std::endl;
+*/
 
 
   // batan_optの計算
