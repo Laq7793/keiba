@@ -17,7 +17,6 @@ int main(void){
   double baren[n+1][n+1], sanren[n+1][n+1][n+1];   // brn[i][j] := i-j のオッズ
   std::string unchi, unpip;       // := unchi, unpip
 
-
   // input
   std::cin >> unchi;
   for(i=1;i<n+1;i++){   // tan
