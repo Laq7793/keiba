@@ -43,7 +43,7 @@ int main(void){
         if(santan[i][j][k] == 0.0)  santan[i][j][k] = 1.0;
       }
     }
-	}
+　}
   std::cin >> unchi >> unpip;
   for(i=1;i<n+1;i++){   // baren
     for(j=i+1;j<n+1;j++){
