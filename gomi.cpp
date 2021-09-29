@@ -56,7 +56,7 @@ void Brain_nuts(std::vector<std::string> path, std::vector<std::string> &file_li
 
 int main(void){
 	std::vector<std::string> file_list, path = {"", "data/201101-20110305/", "data/201901050601/"};
-	Brain_nuts(file_list, path);
+	Brain_nuts(path, file_list);
 	for(auto i : file_list){
 		std::cout << i << std::endl;
 	}
