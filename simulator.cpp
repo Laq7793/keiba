@@ -18,10 +18,10 @@ std::string PIN = getenv("PIN");
 std::string root_url = "https://www.ipat.jra.go.jp/";
 
 //race information
-#define N 15 //馬数
+#define N 16 //馬数
 int row=1;
 int columun=1;
-int race_num=1;
+int race_num=4;
 int num_of_horses=N;
 int mod=num_of_horses%NUM_OF_THREADS;
 int step=num_of_horses/NUM_OF_THREADS;
@@ -29,7 +29,8 @@ int step=num_of_horses/NUM_OF_THREADS;
 //money information
 int capital_money=100000;
 int actual_upper_spent=0;//上位分に使った実際の金額
-int deposit = 5000;//頭金の基準
+int deposit = 3000;//頭金の基準
+int challnage_index=3; //2:慎重　3:セメ　4:ハイリスク、ハイリターン
 int actual_deposit=0;//頭金に使った実際の金額
 int odds_boundary = 15;//これが上位と下位の分かれ目になります。
 double upper_probability = 0.9; //これが上位が勝つ確率.odds_boundaryによっても変化する、またこの数字は確実なものではないので注意すること。
@@ -41,8 +42,10 @@ double expected_return = 0;//期待返金額
 int purchase_price = 0;//合計購入金額
 double recovery_rate = 0; //回収率
 
-//ticket_selectiong configuration
-std::vector<int> second_excluding{4,5,6,9,10};
+//ticket_selecting configuration
+std::vector<int> second_excluding{1,2,5,8,9,11,12,14,16};//二着外し
+std::vector<int> third_excluding{};//３着外し
+std::vector<int> first_excluding{1,2,3,4,5,8,9,11,12,14,16};//1着外し。かなり怖いけど。
 //ticket_information
 struct sTansyou{
     int umaban;
@@ -79,33 +82,23 @@ struct sTansyou{
     double probability;
   };
 
-  int n_tansyou=0,n_umaren=0,n_umatan=0,n_santan=0;
-
-  std::vector<sTansyou> Tansyou;
-  std::vector<sUmaren> Umaren;
-  std::vector<sUmatan> Umatan;
-  std::vector<sSantan> Santan;
+  
 
   //100円単位で切り上げ関数
   int my_ceil(double m){
-      /*if(m%100==0){
-          return (int)m;
-      }*/
-      int ret;
-          m/=10;
-          m/=10;
-          ret = (int)m;
-          ret+=1;
-          ret*=100;
-          return ret;
+    int ret;
+    m/=10;
+    m/=10;
+    ret = (int)m;
+    ret+=1;
+    ret*=100;
+    return ret;
   }
 
 //odds array
 int n = num_of_horses;
 double tansyou[N+1], batan[N+1][N+1], santan[N+1][N+1][N+1];		// sntn[i][j][k] := i>j>k のオッズ
 double baren[N+1][N+1]; // brn[i][j] := i-j のオッズ
-std::string unchi, unpip;       // := unchi, unpip
-double v_ini = 999999.9;   //   初期化の値
 
 //worker thread (sanrantan scraper)
 void worker(int worker_id,int mod){
@@ -149,7 +142,6 @@ void worker(int worker_id,int mod){
         std::ofstream file(file_name);//file(file_name);
         
         //scraping sanrentan
-        //まずは移動しないといけない
         std::this_thread::sleep_for(std::chrono::seconds(2));
         std::string odds_type_change_xpath = "//*[@id=\"bet-odds-type\"]";
         chrome.FindElement(ByXPath(odds_type_change_xpath)).Click();
@@ -174,12 +166,8 @@ void worker(int worker_id,int mod){
                 std::this_thread::sleep_for(std::chrono::seconds(1));
             }
             for(int second = 1;second<num_of_horses;second++){
-                ////*[@id="main"]/ui-view/div[2]/ui-view/ui-view/main/div/span/span/bet-odds-type-trifecta-basic/div/div/div[2]/div[1]/div[2]/div[1]
-                ////*[@id="main"]/ui-view/div[2]/ui-view/ui-view/main/div/span/span/bet-odds-type-trifecta-basic/div/div/div[2]/div[2]/div[2]/div[1]
                 std::string nichaku_xpath = "//*[@id=\"main\"]/ui-view/div[2]/ui-view/ui-view/main/div/span/span/bet-odds-type-trifecta-basic/div/div/div[2]/div[" +std::to_string(second) +"]/div[2]/div[1]";
                 for(int third=1;third<num_of_horses;third++){
-                    ////*[@id="main"]/ui-view/div[2]/ui-view/ui-view/main/div/span/span/bet-odds-type-trifecta-basic/div/div/div[2]/div[1]/div[2]/div[2]/div[1]
-                    ////*[@id="main"]/ui-view/div[2]/ui-view/ui-view/main/div/span/span/bet-odds-type-trifecta-basic/div/div/div[2]/div[1]/div[2]/div[3]/div[1]
                     std::string sanchaku_xpath = "//*[@id=\"main\"]/ui-view/div[2]/ui-view/ui-view/main/div/span/span/bet-odds-type-trifecta-basic/div/div/div[2]/div[1]/div[2]/div["+ std::to_string(third+1)+"]/div[1]";
                     std::string odds_xpath = "//*[@id=\"main\"]/ui-view/div[2]/ui-view/ui-view/main/div/span/span/bet-odds-type-trifecta-basic/div/div/div[2]/div["+std::to_string(second)+"]/div[2]/div["+std::to_string(third+1)+"]/div[2]/button/odds-num/span/span";
                     file << first << ">" << chrome.FindElement(ByXPath(nichaku_xpath)).GetText()
@@ -322,6 +310,9 @@ int main()
     std::system("cat real_time_odds1 >> real_time_odds.txt");
     std::system("cat real_time_odds2 >> real_time_odds.txt");
     std::system("cat real_time_odds3 >> real_time_odds.txt");
+
+
+
     
 
   // batan_optの計算
@@ -459,8 +450,6 @@ int main()
     }
   }
 
-
-
   // output
   // 馬連買ってなかったらそれ実質tan_opt
   for(int i=1;i<n+1;i++){
@@ -488,14 +477,21 @@ int main()
           upper_group.insert(i);
       }
   }
+
+  int n_tansyou=0,n_umaren=0,n_umatan=0,n_santan=0;
+
+    std::vector<sTansyou> Tansyou;
+    std::vector<sUmaren> Umaren;
+    std::vector<sUmatan> Umatan;
+    std::vector<sSantan> Santan;
   
 
   // 買うやつ
     for(int i=1;i<n+1;i++){
       //下位グループであれば問答無用で単勝
         if(lower_group.count(i)){
-            struct sTansyou new_tan = {i,tansyou[i],0};
-            Tansyou.push_back(new_tan);
+            struct sTansyou new_tan1 = {i,tansyou[i],0};
+            Tansyou.push_back(new_tan1);
             n_tansyou++;
             std::cout << i << " " << tansyou[i] << std::endl;
         }
@@ -503,8 +499,8 @@ int main()
             if(f_buy_tnpt[i]){      // tan_optを選択
                 if(f_tan[i]){       // tanがbatan_opt よりも合成オッズが高い
                     std::cout << i << " " << tansyou[i] << std::endl;    // 短小を購入
-                    struct sTansyou new_tan = {i,tansyou[i],0};
-                    Tansyou.push_back(new_tan);
+                    struct sTansyou new_tan2 = {i,tansyou[i],0};
+                    Tansyou.push_back(new_tan2);
                     n_tansyou++;
                 }
                 else{   // batan_optがtanよりも高い
@@ -536,7 +532,8 @@ int main()
                     if(f_buy_brn[i][j]){        // barenを買う
                         if(i > j) continue;   // 重複対策
                         std::cout << i << "=" << j << " " << baren[i][j] << std::endl;
-                        struct sUmaren new_umaren = {i,j,baren[i][j]};
+                        struct sUmaren new_umaren = {i,j,baren[i][j],0};
+                        Umaren.push_back(new_umaren);
                         n_umaren++;
                     }
                 else if(f_batan[i][j]){    // batanがsantanよりも高井
@@ -608,15 +605,12 @@ int main()
       }
       //
   }
-  std::cout << "segufo sagasi" << actual_deposit << std::endl;
 
   lower_synth_odds = 1.0/lower_synth_odds_inv;
-  money_upper = 2*actual_deposit*lower_synth_odds - actual_deposit;
-
-  std::cout << "segufo sagasi2" << std::endl; 
-
+  money_upper = challnage_index*actual_deposit*lower_synth_odds - actual_deposit;
   //ここで、絶対に来ないであろう馬を三連、馬連、馬単から抜いておく。特に三連から。しかし慎重に。
   //とりあえず飛ばす。
+  //二着抜かし
   for(auto itr = Santan.begin();itr != Santan.end();){
       for(int j=0;j<second_excluding.size();j++){
           if(itr->umaban2 == second_excluding[j]){
@@ -624,24 +618,12 @@ int main()
               n_santan--;
               break;
           }
-      }
-      itr++;
-
-  }
-  
-  std::cout << "segufo no tatujin" << std::endl;
-    for(auto itr = Umaren.begin();itr != Umaren.end();){
-      for(int j=0;j<second_excluding.size();j++){
-          if(itr->umaban2 == second_excluding[j]){
-              itr = Umaren.erase(itr);
-              n_umaren--;
-              break;
+          if(j==second_excluding.size()-1){
+              ++itr;
           }
       }
-      itr++;
   }
 
-std::cout << "segufo no tatujin2" << std::endl;
    for(auto itr = Umatan.begin();itr != Umatan.end();){
       for(int j=0;j<second_excluding.size();j++){
           if(itr->umaban2 == second_excluding[j]){
@@ -649,17 +631,72 @@ std::cout << "segufo no tatujin2" << std::endl;
               n_umatan--;
               break;
           }
+          if(j==second_excluding.size()-1){
+              ++itr;
+          }
       }
-      itr++;
-
   }
+
+    for(auto itr = Umaren.begin();itr != Umaren.end();){
+      for(int j=0;j<second_excluding.size();j++){
+          if(itr->umaban2 == second_excluding[j]){
+              itr = Umaren.erase(itr);
+              n_umaren--;
+              break;
+          }
+          if(j==second_excluding.size()-1){
+              ++itr;
+          }
+      }
+  }
+
+  //一着外し
+    for(auto itr = Santan.begin();itr != Santan.end();){
+      for(int j=0;j<first_excluding.size();j++){
+          if(itr->umaban1 == first_excluding[j]){
+              itr = Santan.erase(itr);
+              n_santan--;
+              break;
+          }
+          if(j==first_excluding.size()-1){
+              ++itr;
+          }
+      }
+  }
+
+   for(auto itr = Umatan.begin();itr != Umatan.end();){
+      for(int j=0;j<first_excluding.size();j++){
+          if(itr->umaban1 == first_excluding[j]){
+              itr = Umatan.erase(itr);
+              n_umatan--;
+              break;
+          }
+          if(j==first_excluding.size()-1){
+              ++itr;
+          }
+      }
+  }
+
+    for(auto itr = Umaren.begin();itr != Umaren.end();){
+      for(int j=0;j<first_excluding.size();j++){
+          if(itr->umaban1 == first_excluding[j]){
+              itr = Umaren.erase(itr);
+              n_umaren--;
+              break;
+          }
+          if(j==first_excluding.size()-1){
+              ++itr;
+          }
+      }
+  }
+
 
   //上位合成オッズの計算
   double upper_synth_odds_inv=0;
   double upper_group_max_odds=0;
   minimum_money=0;
     dominator=0;
-std::cout << "segufo sagasi3" << std::endl; 
+
 
   //基準金額を探す
   //tansyou
@@ -671,7 +708,7 @@ std::cout << "segufo sagasi3" << std::endl;
           upper_group_max_odds=Tansyou[i].odds;
       }
   }
-  std::cout << "segufo sagasi3.1" << std::endl; 
+
 
   //baren
   for(int i=0;i<n_umaren;i++){
@@ -683,7 +720,7 @@ std::cout << "segufo sagasi3" << std::endl;
           upper_group_max_odds=Umaren[i].odds;
       }
   }
-  std::cout << "segufo sagasi3.2" << std::endl; 
+
   //batan
   for(int i=0;i<n_umatan;i++){
       if(upper_group.count(Umatan[i].umaban1)){
@@ -693,7 +730,7 @@ std::cout << "segufo sagasi3" << std::endl;
           upper_group_max_odds = Umatan[i].odds;
       }
   }
-  std::cout << "segufo sagasi3.3" << std::endl; 
+
   //santan
   for(int i=0;i<n_santan;i++){
       if(upper_group.count(Santan[i].umaban1)){
@@ -704,7 +741,7 @@ std::cout << "segufo sagasi3" << std::endl;
           upper_group_max_odds = Santan[i].odds;
       }
   }
-std::cout << "segufo sagasi4" << std::endl; 
+
   //基準金額の設定
     for(int i=0;i<n_tansyou;i++){
       if(upper_group.count(Tansyou[i].umaban)){
@@ -782,7 +819,7 @@ std::cout << "segufo sagasi4" << std::endl;
   bool henkou_flag=false;
   //baren
   std::cout << "baren" << std::endl;
-  for(auto i= Umaren.begin();i!=Umaren.end();){
+  for(auto i= Umaren.begin();i!=Umaren.end();i++){
       if(lower_group.count(i->umaban1)){
           //馬連の購入馬券の中に下位グループのものが含まれている。単勝に変更
           //i = Umaren.erase(i);
@@ -819,10 +856,10 @@ std::cout << "segufo sagasi4" << std::endl;
     std::cout << "expected_lower_return = " << actual_deposit*lower_synth_odds*lower_probability << " Yen" << std::endl;
     std::cout << "upper_monery=" << money_upper <<" Yen" << std::endl; 
     std::cout << "actual_upper_spent=" << actual_upper_spent << " yen" << std::endl;
-    std::cout << "upper_synth_odds=" << upper_synth_odds << std::endl;
     purchase_price = actual_upper_spent + actual_deposit;
     std::cout << "total money spent = " << purchase_price << " yen" << std::endl;
     upper_synth_odds = 1.0/upper_synth_odds_inv;
+    std::cout << "upper_synth_odds=" << upper_synth_odds << std::endl;
     expected_return = actual_upper_spent*upper_synth_odds*upper_probability + actual_deposit*lower_synth_odds*lower_probability;
     std::cout << "expected_return= " << expected_return << " yen" << std::endl;
     recovery_rate = expected_return/(double)purchase_price;
