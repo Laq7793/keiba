@@ -1,0 +1,232 @@
+#include<iostream>
+#include<vector>
+#include<string>
+#include "baken_format.h"
+
+
+void cal(std::vector<std::vector<std::vector<double>>> santan,std::vector<std::vector<double>>& batan,std::vector<std::vector<double>>& baren,double *tansyou,int n,std::vector<sUmatan>& batan_list,std::vector<sUmaren>& baren_list,std::vector<sSantan>& santan_list,std::vector<sTansyou>& tan_list)
+{
+    std::vector<std::vector<bool>> f_batan(n+1, std::vector<bool>(n+1, false));   // := 馬単を選択したか
+    double batan_opt[n+1][n+1];    // := 馬単と三連単の良いほう
+    for(int i=1;i<n+1;i++){
+        for(int j=1;j<n+1;j++){
+            if(i == j)  continue;
+
+            double sansum = 0.0;   // := 三連単の逆数の和
+            for(int k=1;k<n+1;k++){
+                if(i == k || j == k)    continue;
+            sansum += 1.0/santan[i][j][k];
+            }
+
+            if(1.0/sansum <= batan[i][j]){   // 馬単のほうが高井
+                batan_opt[i][j] = batan[i][j];
+                f_batan[i][j] = true;
+            }
+            else{   // 三連単の合計のほうが高い
+                batan_opt[i][j] = 1.0/sansum;
+            }
+        }
+    }    
+
+
+
+    // tan_optの計算
+    std::vector<bool> Istan(n+1, false);     // := 短小，btn_optで短小が高井か
+    double tan_opt[n+1];    // := batan_optと短小の良いほう
+    for(int i=1;i<n+1;i++){
+        double batansum = 0.0;  // := batan_optの和
+        for(int j=1;j<n+1;j++){
+            if(i == j)  continue;    
+            batansum += 1.0/batan_opt[i][j];
+        }
+
+    if(1.0/batansum <= tansyou[i]){   // 短小選択
+      tan_opt[i] = tansyou[i];
+      Istan[i] = true;
+    }
+    else{    // !tan
+      tan_opt[i] = 1.0/batansum;
+    }
+  }
+
+
+
+  // baren, btn_opt比較
+  std::vector<std::vector<bool>> f_baren(n+1, std::vector<bool>(n+1, false));   // := btn_optとbrnでbrnのほうが高井か
+  for(int i=1;i<n+1;i++){
+    for(int j=i+1;j<n+1;j++){
+      if(1.0/batan_opt[i][j] + 1.0/batan_opt[j][i] >= 1.0/baren[i][j]){   // barenのほうが高い
+        f_baren[i][j] = true;
+        f_baren[j][i] = true;
+        //std::cout << "(" << i << ", " << j << ")" << " ";
+      }
+    }
+  }//std::cout << std::endl;
+
+
+
+  // BitFullSearch
+  double odds_opt = 0.0;                     // := 合成オッズの最大値
+  std::vector<bool> f_buy_tnpt(n+1, false);                                       // := オッズが最大の時のOOを選んだか
+  std::vector<std::vector<bool>> f_buy_btnpt(n+1, std::vector<bool>(n+1, false));
+  std::vector<std::vector<bool>> f_buy_brn(n+1, std::vector<bool>(n+1, false));
+
+  for(int bit=0;bit<(1<<n);bit++){
+    double odds = 0.0;
+    std::vector<int> use, nouse;    // := baren を使う使わないグループ
+    std::vector<bool> f_tnpt_unchi(n+1, false);                                       // := OOを選んだか
+    std::vector<std::vector<bool>> f_btnpt_unchi(n+1, std::vector<bool>(n+1, false));
+    std::vector<std::vector<bool>> f_brn_unchi(n+1, std::vector<bool>(n+1, false));
+
+
+    // グループ作成
+    for(int i=0;i<n;i++){
+      if(bit & (1<<i)){   // i番目のbitが1 <=> i番目の馬連使てがんばる
+        use.push_back(i+1);
+      }
+      else{
+        nouse.push_back(i+1);
+      }
+    }
+    
+    // 馬連を使う
+    for(int i=0;i<use.size();i++){
+
+      // 2番目がuseのとき
+      for(int j=0;j<use.size();j++){
+        if(use[i] == use[j])  continue;
+
+        if(f_baren[use[i]][use[j]]){      // barenのほうが高い
+          if(use[i] > use[j])  continue;  // 二重加算の防止
+          odds += 1.0/baren[use[i]][use[j]];
+          f_brn_unchi[use[i]][use[j]] = true;
+          f_brn_unchi[use[j]][use[i]] = true;
+        }
+        else{                   // batan_optのほうが高い
+          odds += 1.0/batan_opt[use[i]][use[j]];
+          f_btnpt_unchi[use[i]][use[j]] = true;
+        } 
+      }
+
+      // 2番目がnouseのとき   //baren使わない
+      for(int j=0;j<nouse.size();j++){
+        if(use[i] == nouse[j])  continue;   //  多分いらない
+        odds += 1.0/batan_opt[use[i]][nouse[j]];
+        f_btnpt_unchi[use[i]][nouse[j]] = true;      
+      }
+    }
+
+
+    // 馬連を使わない
+    for(auto k : nouse){
+      odds += 1.0/tan_opt[k];   // tan_opt一択
+      f_tnpt_unchi[k] = true;
+    }
+
+    odds = 1.0/odds;
+    //std::cout << odds << std::endl;
+
+    // 最大値の更新とか
+    if(odds > odds_opt){
+      odds_opt = odds;
+      // フラグのコピー
+      for(int i=1;i<n+1;i++){
+        f_buy_tnpt[i] = f_tnpt_unchi[i];
+        for(int j=1;j<n+1;j++){
+          f_buy_brn[i][j] = f_brn_unchi[i][j];
+          f_buy_btnpt[i][j] = f_btnpt_unchi[i][j];
+        }
+      }
+    }
+  }
+
+  // output
+  // 馬連買ってなかったらそれ実質tan_opt
+  for(int i=1;i<n+1;i++){
+    if(f_buy_tnpt[i]) continue;
+    int cnt = 0;
+    for(int j=1;j<n+1;j++){
+      if(f_buy_brn[i][j]){
+        cnt++;
+      }
+    }
+    if(cnt == 0){
+      f_buy_tnpt[i] = true;
+    }
+  }
+
+  // 買うやつ
+    for(int i=1;i<n+1;i++){
+      //下位グループであれば問答無用で単勝
+        //if(lower_group.count(i)){
+            struct sTansyou new_tan1 = {i,tansyou[i],0};
+            tan_list.push_back(new_tan1);
+            
+            std::cout << i << " " << tansyou[i] << std::endl;
+        //}
+        //else{
+            if(f_buy_tnpt[i]){      // tan_optを選択
+                if(Istan[i]){       // tanがbatan_opt よりも合成オッズが高い
+                    std::cout << i << " " << tansyou[i] << std::endl;    // 短小を購入
+                    struct sTansyou new_tan2 = {i,tansyou[i],0};
+                    tan_list.push_back(new_tan2);
+                    
+                }
+                else{   // batan_optがtanよりも高い
+                    for(int j=1;j<n+1;j++){
+                        if(i == j)   continue;
+
+                        if(f_batan[i][j]){    // batanがsantanよりも高井
+                            std::cout << i << ">" << j << " " << batan[i][j] << std::endl;    // 馬単を購入
+                            struct sUmatan new_umatan = {i,j,batan[i][j],0};
+                            batan_list.push_back(new_umatan);
+                            
+                        }
+                        else{
+                            for(int k=1;k<n+1;k++){
+                                if(i == k || j == k)  continue;
+                                std::cout << i << ">" << j << ">" << k << " " << santan[i][j][k] << std::endl;;   // santanを購入
+                                struct sSantan new_santan = {i,j,k,santan[i][j][k],0};
+                                santan_list.push_back(new_santan);
+                                
+                            }
+                        }
+                    }
+                }
+            }
+            else{   // baren混合を購入
+                for(int j=1;j<n+1;j++){
+                    if(i == j)  continue;
+
+                    if(f_buy_brn[i][j]){        // barenを買う
+                        if(i > j) continue;   // 重複対策
+                        std::cout << i << "=" << j << " " << baren[i][j] << std::endl;
+                        struct sUmaren new_umaren = {i,j,baren[i][j],0};
+                        baren_list.push_back(new_umaren);
+                       
+                    }
+                else if(f_batan[i][j]){    // batanがsantanよりも高井
+                    std::cout << i << ">" << j << " " << batan[i][j] << std::endl;    // 馬単を購入
+                    struct sUmatan new_umatan = {i,j,batan[i][j],0};
+                    batan_list.push_back(new_umatan);
+                    
+                }
+                else{
+                    for(int k=1;k<n+1;k++){
+                        if(i == k || j == k)  continue;
+                        std::cout << i << ">" << j << ">" << k << " " << santan[i][j][k] << std::endl;;   // santanを購入
+                        struct sSantan new_santan = {i,j,k,santan[i][j][k],0};
+                        santan_list.push_back(new_santan);
+                        
+                    }
+                }
+                }
+            }
+    
+        //}   
+    }
+
+	// 合成オッズ
+  std::cout << "odds = " << odds_opt << std::endl;
+
+}
