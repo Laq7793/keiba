@@ -8,10 +8,11 @@
 
 using namespace webdriverxx;
 
-#define NUM_OF_THREADS 5
+#define NUM_OF_THREADS 4
 
 //login information(dont forget to source ~/.profile)
 std::string P_ARS = getenv("P_ARS");
+
 std::string INET_ID = getenv("INET_ID");
 std::string USER_NUM = getenv("USER_NUM");
 std::string PIN = getenv("PIN");
@@ -21,7 +22,7 @@ std::string root_url = "https://www.ipat.jra.go.jp/";
 #define N 16 //馬数
 int row=1;
 int columun=1;
-int race_num=4;
+int race_num=12;
 int num_of_horses=N;
 int mod=num_of_horses%NUM_OF_THREADS;
 int step=num_of_horses/NUM_OF_THREADS;
@@ -43,9 +44,9 @@ int purchase_price = 0;//合計購入金額
 double recovery_rate = 0; //回収率
 
 //ticket_selecting configuration
-std::vector<int> second_excluding{1,2,5,8,9,11,12,14,16};//二着外し
+std::vector<int> second_excluding{3,7,9,13,11};//二着外し。絶対何か外さんと動かん。
 std::vector<int> third_excluding{};//３着外し
-std::vector<int> first_excluding{1,2,3,4,5,8,9,11,12,14,16};//1着外し。かなり怖いけど。
+std::vector<int> first_excluding{4};//1着外し。かなり怖いけど。
 //ticket_information
 struct sTansyou{
     int umaban;
@@ -190,19 +191,19 @@ int main()
 {
 
     //multithread化。三連単をworkerに回収してもらう。ここね、スレッド数が固定されてるとmod=3のときとかに遅くなるので動的生成したほうがいいかもしれない。
-/*
+
     std::thread th0(worker,0,0);
     std::thread th1(worker,1,0);
     std::thread th2(worker,2,0);
     std::thread th3(worker,3,mod);
-    */
-
+    
+    /*
     std::thread th0(worker,0,0);
     std::thread th1(worker,1,0);
     std::thread th2(worker,2,0);
     std::thread th3(worker,3,0);
     std::thread th4(worker,4,mod);
-
+*/
 
 
     //main thread は単勝、馬単、馬連をスクレイピングしてもらう
@@ -292,17 +293,17 @@ int main()
     file << "\n";
 
     //スレッドがジョインするのを待つ
-/*
+
     th0.join();
     th1.join();
     th2.join();
     th3.join();
-*/
-    th0.join();
-    th1.join();
-    th2.join();
-    th3.join();
-    th4.join();
+
+    // th0.join();
+    // th1.join();
+    // th2.join();
+    // th3.join();
+    // th4.join();
     
 
     //まとめる。linuxコマンドをプログラムの中から呼び出している。
@@ -593,7 +594,6 @@ int main()
       }
   }
   minimum_money = deposit/dominator;
-
   //メビウスの方程式適用
   for(int i=0;i<n_tansyou;i++){
       //合成オッズの計算
@@ -611,6 +611,7 @@ int main()
   //ここで、絶対に来ないであろう馬を三連、馬連、馬単から抜いておく。特に三連から。しかし慎重に。
   //とりあえず飛ばす。
   //二着抜かし
+  if(second_excluding.size()!=0){
   for(auto itr = Santan.begin();itr != Santan.end();){
       for(int j=0;j<second_excluding.size();j++){
           if(itr->umaban2 == second_excluding[j]){
@@ -649,8 +650,10 @@ int main()
           }
       }
   }
+  }
 
   //一着外し
+  if(first_excluding.size()!=0){
     for(auto itr = Santan.begin();itr != Santan.end();){
       for(int j=0;j<first_excluding.size();j++){
           if(itr->umaban1 == first_excluding[j]){
@@ -689,6 +692,7 @@ int main()
           }
       }
   }
+  }
 
 
   //上位合成オッズの計算
@@ -713,7 +717,6 @@ int main()
   //baren
   for(int i=0;i<n_umaren;i++){
       if(upper_group.count(Umaren[i].umaban1)){
-          std::cout << Umaren[i].odds << std::endl;
           upper_synth_odds_inv+=1.0/Umaren[i].odds;
       }
       if(Umaren[i].odds>upper_group_max_odds){
