@@ -23,18 +23,18 @@ std::vector<int> split(const std::string &str, char delim) {
 
 // オッズのインプット，初期化はこの関数内でしております．
 void InputOdds(int num_of_horses,
-               std::vector<double>& tan, 
-               std::vector<double>& waku, 
-	       std::vector<std::vector<double>>& umatan, 
-	       std::vector<std::vector<std::vector<double>>>& santan,
-	       std::vector<std::vector<double>>& umaren, 
-	       std::vector<std::vector<std::vector<double>>>& sanren, 
-	       std::vector<std::vector<double>>& wide)
+               std::vector<double>& tan,
+               std::vector<double>& waku,
+               std::vector<std::vector<double>>& umatan,
+               std::vector<std::vector<std::vector<double>>>& santan,
+               std::vector<std::vector<double>>& umaren,
+               std::vector<std::vector<std::vector<double>>>& sanren,
+               std::vector<std::vector<double>>& wide)
 {
 
   int i, j, k;
   std::string unchi, unpip;       // := unchi, unpip
-  double v_ini = 1.0;   //   初期化の値
+  double v_ini = 99999.9;   //   初期化の値
 
   // 初期化
   for(i=0;i<num_of_horses+1;i++){
@@ -154,6 +154,6 @@ void InputOdds(int num_of_horses,
     wide[uma[0]][uma[1]] = TANAKA;
     wide[uma[1]][uma[0]] = TANAKA;
   }
-
-	return;
+  
+  return;
 }
