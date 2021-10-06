@@ -25,12 +25,12 @@ std::vector<int> split(const std::string &str, char delim) {
 void InputOdds(int num_of_horses,
                std::vector<double>& tan, 
                std::vector<double>& waku, 
-							 std::vector<std::vector<double>>& umatan, 
-							 std::vector<std::vector<std::vector<double>>>& santan, 
-							 std::vector<std::vector<double>>& umaren, 
-							 std::vector<std::vector<std::vector<double>>>& sanren, 
-							 std::vector<std::vector<double>>& wide){
-
+	       std::vector<std::vector<double>>& umatan, 
+	       std::vector<std::vector<std::vector<double>>>& santan,
+	       std::vector<std::vector<double>>& umaren, 
+	       std::vector<std::vector<std::vector<double>>>& sanren, 
+	       std::vector<std::vector<double>>& wide)
+{
 
   int i, j, k;
   std::string unchi, unpip;       // := unchi, unpip
