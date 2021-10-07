@@ -1,7 +1,7 @@
 #include<iostream>
 using namespace std;
 
-double OddsToProbability(double odds){;
+double Odds2Probability(double odds){;
     double plist[] = {100.0, 78.6, 64.6, 66.2, 60.3, 52.0, 50.9, 44.8, 43.5, 39.2,
                       35.7, 33.0, 32.4, 30.0, 27.6, 24.7, 22.4, 17.6, 13.4, 10.0,
                       7.0, 4.9, 3.4, 2.1, 1.1, 0.3};
@@ -41,7 +41,7 @@ double OddsToProbability(double odds){;
     };
 };
 
-double PopularityToProbability(int popularity){;
+double Popularity2Probability(int popularity){;
     double plist[] = {31.9, 18.8, 13.2, 9.6, 7.2, 5.5, 4.0, 3.0, 2.2,
                       1.6, 1.4, 0.9, 0.7, 0.4, 0.4, 0.2, 0.2, 0.1};
     
@@ -59,9 +59,9 @@ int main(){;
     while(true){;
         cout << "odds:";
         cin >> odds;
-        cout << OddsToProbability(odds) << endl;
+        cout << Odds2Probability(odds) << endl;
         cout << "popularity:";
         cin >> popularity;
-        cout << PopularityToProbability(popularity) << endl;
+        cout << Popularity2Probability(popularity) << endl;
     };
 };
