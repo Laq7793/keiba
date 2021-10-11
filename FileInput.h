@@ -29,7 +29,8 @@ void InputOdds(int num_of_horses,
                std::vector<std::vector<std::vector<double>>>& santan,
                std::vector<std::vector<double>>& umaren,
                std::vector<std::vector<std::vector<double>>>& sanren,
-               std::vector<std::vector<double>>& wide)
+               std::vector<std::vector<double>>& wide,
+               std::vector<int>& result)
 {
 
   int i, j, k;
@@ -154,6 +155,14 @@ void InputOdds(int num_of_horses,
     wide[uma[0]][uma[1]] = TANAKA;
     wide[uma[1]][uma[0]] = TANAKA;
   }
+
+  //result
+  std::cin >> unchi;
+  for(i=0;i<num_of_horses;i++){
+    std::cin >>unchi >>  result[i];
+    std::cout << result[i] << std::endl;
+  }
+
   
   return;
 }
