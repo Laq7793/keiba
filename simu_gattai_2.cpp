@@ -8,7 +8,7 @@
 // ver.1.0 : 関数化したらしい 
 // ver.1.1 : 入力をHにした，その他細かいあれ(詳細はgithubに記載予定)
 // ver.1.2 : サイトからリアルタイムでスクレイピングにするのを関数化した。あと、スクレイパのスレッド数を最適化した。平均で40秒でスクレイピング終わります
-// ver.1.3 : 除外馬を決める（ExcStra)。馬の除外＆＆メビウスの方程式で均等振り分け(Select)。結果との比較、あたり馬券の可視化（ResultComp)
+
 #include<iostream>
 #include<vector>
 #include<string>
@@ -42,8 +42,8 @@ int main(void){
   std::vector<std::thread> threads;
 
   //その他
-  int capital = 100000;//資本金
-  int Base = capital*0.1;
+  int capital = 300000;//資本金
+  int Base = capital*0.03;
   int spent = 0;
   int refund = 0;//返金額
   
@@ -99,6 +99,7 @@ int main(void){
 
   //ここで、独自のアルゴリズムで除外馬を決定するのもあり
   ExcStra1(FirstEx_list,SecondEx_list,ThirdEx_list,tan);
+  ExcStra2(FirstEx_list,tan,n);
 
   //除外馬の選定、購入馬券の決定,返り値は購入金額。spent==0のときは、ちきったということで
   spent = Select(Santan_list,Umaren_list,Umatan_list,Tan_list,
