@@ -2,7 +2,8 @@
 #include<vector>
 #include<string>
 #include<algorithm>
-#include<sstream> 
+#include<sstream>
+#include<fstream>
 
 
 // delimで分割して左から順にvectorにぶち込む関数でしゅ
@@ -161,6 +162,153 @@ void InputOdds(int num_of_horses,
   for(i=0;i<num_of_horses;i++){
     std::cin >>unchi >>  result[i];
     std::cout << result[i] << std::endl;
+  }
+
+  
+  return;
+}
+
+//一般的なストリームからの入力。最後の引数にstd::cinを入れれば普通にターミナルから入力されます
+void GenInputOdds(int num_of_horses,
+               std::vector<double>& tan,
+               std::vector<double>& waku,
+               std::vector<std::vector<double>>& umatan,
+               std::vector<std::vector<std::vector<double>>>& santan,
+               std::vector<std::vector<double>>& umaren,
+               std::vector<std::vector<std::vector<double>>>& sanren,
+               std::vector<std::vector<double>>& wide,
+               std::vector<int>& result,
+               std::ifstream& file)
+{
+
+  int i, j, k;
+  std::string unchi, unpip;       // := unchi, unpip
+  double v_ini = 99999.9;   //   初期化の値
+
+  // 初期化
+  for(i=0;i<num_of_horses+1;i++){
+    tan[i] = v_ini;
+    waku[i] = v_ini;
+    for(j=0;j<num_of_horses+1;j++){
+      umatan[i][j] = v_ini;
+      umaren[i][j] = v_ini;
+      wide[i][j] = v_ini;
+      for(k=0;k<num_of_horses+1;k++){
+        santan[i][j][k] = v_ini;
+        sanren[i][j][k] = v_ini;
+      }
+    }
+  }
+
+
+  // input
+  // tan
+  int num;
+  file >> unchi;
+  for(i=1;i<num_of_horses+1;i++){   // tan, waku
+    file >> unchi >> tan[i] >> waku[i];
+
+    // エラー処理(詳細はよくわからんぬ)
+    if(file.fail()){
+      file.clear();
+      file.ignore(std::numeric_limits<std::streamsize>::max(),'\n');
+      printf("INPUT ERROR : tan[%d] or fuku[%d]\n", i, i);
+      tan[i] = v_ini;
+      waku[i] = v_ini;
+      continue;
+    }
+  }
+
+  // umatan
+  file >> unchi >> num;
+  for(i=1;i<num+1;i++){
+    std::string str;    // := 「i>j」とか
+    double TANAKA;      // := odds
+    file >> str >> TANAKA;
+    if(file.fail()){
+      file.clear();
+      file.ignore(std::numeric_limits<std::streamsize>::max(),'\n');
+      printf("INPUT ERROR : umatan, i = %d\n", i);
+      continue;
+    }
+    std::vector<int> uma = split(str, '>');     // >で分割してvectorに入れる
+    umatan[uma[0]][uma[1]] = TANAKA;
+  }
+
+  // santan
+  file >> unchi >> num;
+  for(i=1;i<num+1;i++){
+    std::string str;    // := 「i>j」とか
+    double TANAKA;      // := odds
+    file >> str >> TANAKA;
+    if(file.fail()){
+      file.clear();
+      file.ignore(std::numeric_limits<std::streamsize>::max(),'\n');
+      printf("INPUT ERROR : santan, i = %d\n", i);
+      continue;
+    }
+    std::vector<int> uma = split(str, '>');
+    santan[uma[0]][uma[1]][uma[2]] = TANAKA;
+  }
+
+  // umaren
+  file >> unchi >> num;
+  for(i=1;i<num+1;i++){
+    std::string str;    // := 「i>j」とか
+    double TANAKA;      // := odds
+    file >> str >> TANAKA;
+    if(file.fail()){
+      file.clear();
+      file.ignore(std::numeric_limits<std::streamsize>::max(),'\n');
+      printf("INPUT ERROR : umaren, i = %d\n", i);
+      continue;
+    }
+    std::vector<int> uma = split(str, '-');
+    umaren[uma[0]][uma[1]] = TANAKA;
+    umaren[uma[1]][uma[0]] = TANAKA;
+  }
+
+  // sanren
+  file >> unchi >> num;
+  for(i=1;i<num+1;i++){
+    std::string str;    // := 「i>j」とか
+    double TANAKA;      // := odds
+    file >> str >> TANAKA;
+    if(file.fail()){
+      file.clear();
+      file.ignore(std::numeric_limits<std::streamsize>::max(),'\n');
+      printf("INPUT ERROR : sanren, i = %d\n", i);
+      continue;
+    }
+    std::vector<int> uma = split(str, '-');
+    sort(uma.begin(), uma.end());   // なんか怖いじゃん？
+    do{
+      sanren[uma[0]][uma[1]][uma[2]] = TANAKA;
+    }while(std::next_permutation(uma.begin(), uma.end()));
+  }
+
+  // wide
+  file >> unchi >> num;
+  for(i=1;i<num+1;i++){
+    std::string str;    // := 「i>j」とか
+    double TANAKA;      // := odds
+    file >> str >> TANAKA;
+    if(file.fail()){
+      file.clear();
+      file.ignore(std::numeric_limits<std::streamsize>::max(),'\n');
+      printf("INPUT ERROR : wide, i = %d\n", i);
+      continue;
+    }
+    std::vector<int> uma = split(str, '-');
+    wide[uma[0]][uma[1]] = TANAKA;
+    wide[uma[1]][uma[0]] = TANAKA;
+  }
+
+  //result
+  file >> unchi;
+  for(i=0;i<num_of_horses;i++){
+    file >>unchi >>  result[i];
+    //std::cout << result[i] << std::endl;
   }
 
   
